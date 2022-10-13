@@ -1,6 +1,6 @@
 "use strict";
 import { Context, Service, ServiceBroker, ServiceSchema } from "moleculer";
-import { errorHandler } from "../moleculer.config";
+import { TasksManagementController } from "../src/task-management/tasksmanager.controller";
 
 export default class UserTaskManagementService extends Service {
 	// @ts-ignore
@@ -14,14 +14,31 @@ export default class UserTaskManagementService extends Service {
 			hooks: {},
 
 			actions: {
-				getTasksByUserId: {
-					rest: "GET /getTasksByUserId",
-
-					handler(cxt: any) {
-						broker.call("tasks.listTasks");
-
-						return "Get Task";
+				create: {
+					rest: "POST /createTaskforUser",
+					params: {
+						taskId: { type: "string", optional: true },
+						userId: { type: "string", optional: true },
+						status: { type: "string", optional: true },
 					},
+
+					// handler: this.createTaskforUser,
+
+					handler(ctx: any) {
+						this.createTaskforUser(ctx);
+						broker.emit("userTaskManagement.create", ctx.params);
+					},
+				},
+
+				setTasks: {
+					rest: "PUT /setTask",
+					params: {
+						_id: { type: "string", optional: true },
+						status: { type: "string", optional: true },
+						taskenddate: { type: "string", optional: true },
+					},
+
+					handler: this.setTaskforUser,
 				},
 			},
 
@@ -35,5 +52,32 @@ export default class UserTaskManagementService extends Service {
 			},
 			 */
 		});
+	}
+
+	public async createTaskforUser(ctx: any) {
+		const { taskId, userId, status } = ctx.params;
+
+		console.log(taskId, userId, status);
+		// this.broker.emit("userTaskManagement.create", ctx);
+
+		const create = await TasksManagementController.createTaskforUser(
+			taskId,
+			userId,
+			status
+		);
+
+		return create;
+	}
+
+	public async setTaskforUser(ctx: any) {
+		const { _id, status, taskenddate } = ctx.params;
+
+		const update = await TasksManagementController.setTaskforUser(
+			_id,
+			status,
+			taskenddate
+		);
+
+		return update;
 	}
 }

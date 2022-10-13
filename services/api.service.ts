@@ -1,6 +1,9 @@
-import { IncomingMessage } from "http";
-import { Service, ServiceBroker, Context } from "moleculer";
-import ApiGateway from "moleculer-web";
+import { NestFactory } from "@nestjs/core";
+import { Service, ServiceBroker } from "moleculer";
+import * as ApiGateway from "moleculer-web";
+import { appNest } from "../src/main";
+import { AppModule } from "../src/main.module";
+//const ApiGateway = require("moleculer-web");
 
 export default class ApiService extends Service {
 	public constructor(broker: ServiceBroker) {
@@ -9,6 +12,7 @@ export default class ApiService extends Service {
 		this.parseServiceSchema({
 			name: "api",
 			mixins: [ApiGateway],
+
 			// More info about settings: https://moleculer.services/docs/0.14/moleculer-web.html
 			settings: {
 				port: process.env.PORT || 1200,
@@ -166,6 +170,10 @@ export default class ApiService extends Service {
 					}
 				},
 				 */
+			},
+			created() {
+				// NestFactory.create(AppModule);
+				appNest();
 			},
 		});
 	}

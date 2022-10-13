@@ -15,6 +15,7 @@ export class ConnectionMongoDb {
 	private static connection: ConnectionMongoDb;
 
 	private constructor() {}
+	code;
 
 	public static async connect(): Promise<ConnectionMongoDb> {
 		if (!ConnectionMongoDb.connection) {

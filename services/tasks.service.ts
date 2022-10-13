@@ -1,6 +1,6 @@
 "use strict";
 import { Context, Service, ServiceBroker, ServiceSchema } from "moleculer";
-import { errorHandler } from "../moleculer.config";
+import { TasksController } from "../src/task/tasks.controller";
 
 export default class TasksService extends Service {
 	// @ts-ignore
@@ -14,14 +14,29 @@ export default class TasksService extends Service {
 			hooks: {},
 
 			actions: {
-				getTasksByUserId: {
-					rest: "GET /getTasksByUserId",
+				create: {
+					rest: "POST /created-task",
 
-					handler(cxt: any) {
-						broker.call("tasks.listTasks");
-
-						return "Get Task";
+					params: {
+						taskname: { type: "string", optional: false },
+						context: { type: "string", optional: false },
+						status: { type: "string", optional: false },
 					},
+					handler: this.create,
+				},
+
+				update: {
+					rest: "PUT /update-task",
+
+					params: {
+						taskId: { type: "string", optional: false },
+						taskname: { type: "string", optional: true },
+						context: { type: "string", optional: true },
+						status: { type: "string", optional: true },
+						datecreated: { type: "string", optional: true },
+					},
+
+					handler: this.update,
 				},
 			},
 
@@ -35,5 +50,35 @@ export default class TasksService extends Service {
 			},
 			 */
 		});
+	}
+
+	private async create(ctx: any) {
+		const { taskname, context, status } = ctx.params;
+
+		console.log(taskname, context, status);
+
+		const creted = await TasksController.createTask(
+			taskname,
+			context,
+			status
+		);
+
+		console.log(creted);
+
+		return creted;
+	}
+
+	private async update(ctx: any) {
+		const { taskId, taskname, context, status, datecreated } = ctx.params;
+
+		const updateTask = await TasksController.update(
+			taskId,
+			taskname,
+			context,
+			status,
+			datecreated
+		);
+
+		return updateTask;
 	}
 }
