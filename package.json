@@ -40,6 +40,7 @@
     "@types/jest": "^25.1.4",
     "@types/mkdirp": "^1.0.0",
     "@types/node": "^13.9.8",
+    "dotenv": "^16.0.3",
     "moleculer": "^0.14.0",
     "moleculer-db": "^0.8.4",
     "moleculer-db-adapter-mongo": "^0.4.7",

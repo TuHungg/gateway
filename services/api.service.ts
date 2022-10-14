@@ -1,9 +1,7 @@
 import { Service, ServiceBroker } from "moleculer";
 import * as ApiGateway from "moleculer-web";
 
-// import { appNest } from "../src/main";
-// import { AppModule } from "../src/main.module";
-//const ApiGateway = require("moleculer-web");
+import { appNest } from "../src/main";
 
 export default class ApiService extends Service {
 	public constructor(broker: ServiceBroker) {
@@ -13,17 +11,13 @@ export default class ApiService extends Service {
 			name: "api",
 			mixins: [ApiGateway],
 
-			// More info about settings: https://moleculer.services/docs/0.14/moleculer-web.html
 			settings: {
 				port: process.env.PORT || 1200,
 
 				routes: [
 					{
 						path: "/api",
-						whitelist: [
-							// Access to any actions in all services under "/api" URL
-							"**",
-						],
+						whitelist: ["**"],
 						// Route-level Express middlewares. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 						use: [],
 						// Enable/disable parameter merging method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Disable-merging
@@ -33,40 +27,13 @@ export default class ApiService extends Service {
 						authentication: false,
 
 						// Enable authorization. Implement the logic into `authorize` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
-						authorization: false,
+						authorization: true,
 
 						// The auto-alias feature allows you to declare your route alias directly in your services.
 						// The gateway will dynamically build the full routes from service schema.
 						autoAliases: true,
 
 						aliases: {},
-						/**
-					 * Before call hook. You can check the request.
-					 * @param {Context} ctx
-					 * @param {Object} route
-					 * @param {IncomingMessage} req
-					 * @param {ServerResponse} res
-					 * @param {Object} data
-					onBeforeCall(ctx: Context<any,{userAgent: string}>,
-					 route: object, req: IncomingMessage, res: ServerResponse) {
-					  Set request headers to context meta
-					  ctx.meta.userAgent = req.headers["user-agent"];
-					},
-					 */
-
-						/**
-					 * After call hook. You can modify the data.
-					 * @param {Context} ctx
-					 * @param {Object} route
-					 * @param {IncomingMessage} req
-					 * @param {ServerResponse} res
-					 * @param {Object} data
-					 *
-					 onAfterCall(ctx: Context, route: object, req: IncomingMessage, res: ServerResponse, data: object) {
-					// Async function which return with Promise
-					return doSomething(ctx, res, data);
-				},
-					 */
 
 						// Calling options. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Calling-options
 						callingOptions: {},
@@ -88,6 +55,31 @@ export default class ApiService extends Service {
 						// Enable/disable logging
 						logging: true,
 					},
+
+					{
+						path: "/api/auth",
+
+						whitelist: ["user.signin", "user.signup"],
+
+						mergeParams: true,
+						authentication: false,
+						authorization: false,
+						autoAliases: true,
+
+						bodyParsers: {
+							json: {
+								strict: false,
+								limit: "1MB",
+							},
+							urlencoded: {
+								extended: true,
+								limit: "1MB",
+							},
+						},
+
+						mappingPolicy: "all",
+						logging: true,
+					},
 				],
 				// Do not log client side errors (does not log an error response when the error.code is 400<=X<500)
 				log4XXResponses: false,
@@ -104,77 +96,26 @@ export default class ApiService extends Service {
 			},
 
 			methods: {
-				/**
-				 * Authenticate the request. It checks the `Authorization` token value in the request header.
-				 * Check the token value & resolve the user by the token.
-				 * The resolved user will be available in `ctx.meta.user`
-				 *
-				 * PLEASE NOTE, IT'S JUST AN EXAMPLE IMPLEMENTATION. DO NOT USE IN PRODUCTION!
-				 *
-				 * @param {Context} ctx
-				 * @param {any} route
-				 * @param {IncomingMessage} req
-				 * @returns {Promise}
-
-				async authenticate (ctx: Context, route: any, req: IncomingMessage): Promise < any >  => {
-					// Read the token from header
-					const auth = req.headers.authorization;
-
+				async authorize(ctx, route, req, res) {
+					let auth = req.headers["authorization"];
 					if (auth && auth.startsWith("Bearer")) {
-						const token = auth.slice(7);
-
-						// Check the token. Tip: call a service which verify the token. E.g. `accounts.resolveToken`
-						if (token === "123456") {
-							// Returns the resolved user. It will be set to the `ctx.meta.user`
-							return {
-								id: 1,
-								name: "John Doe",
-							};
-
-						} else {
-							// Invalid token
-							throw new ApiGateway.Errors.UnAuthorizedError(ApiGateway.Errors.ERR_INVALID_TOKEN, {
-								error: "Invalid Token",
-							});
-						}
-
-					} else {
-						// No token. Throw an error or do nothing if anonymous access is allowed.
-						// Throw new E.UnAuthorizedError(E.ERR_NO_TOKEN);
-						return null;
-					}
-				},
-				 */
-				/**
-				 * Authorize the request. Check that the authenticated user has right to access the resource.
-				 *
-				 * PLEASE NOTE, IT'S JUST AN EXAMPLE IMPLEMENTATION. DO NOT USE IN PRODUCTION!
-				 *
-				 * @param {Context} ctx
-				 * @param {Object} route
-				 * @param {IncomingMessage} req
-				 * @returns {Promise}
-
-				async authorize (ctx: Context < any, {
-					user: string;
-				} > , route: Record<string, undefined>, req: IncomingMessage): Promise < any > => {
-					// Get the authenticated user.
-					const user = ctx.meta.user;
-
-					// It check the `auth` property in action schema.
-					// @ts-ignore
-					if (req.$action.auth === "required" && !user) {
-						throw new ApiGateway.Errors.UnAuthorizedError("NO_RIGHTS", {
-							error: "Unauthorized",
+						let token = auth.slice(7);
+						const payload = await ctx.call("user.verifyToken", {
+							token,
 						});
+						console.log(payload);
+						ctx.meta.user = payload;
+						return Promise.resolve(ctx);
+					} else {
+						return Promise.reject("No token");
 					}
 				},
-				 */
 			},
-			// created() {	
-			// 	// NestFactory.create(AppModule);
-			// 	appNest();
-			// },
+			created: this.startAppNest,
 		});
+	}
+
+	private async startAppNest() {
+		await appNest();
 	}
 }
