@@ -13,10 +13,40 @@ export default class ApiService extends Service {
 
 			settings: {
 				port: process.env.PORT || 1200,
+				path: "/api",
 
 				routes: [
 					{
-						path: "/api",
+						path: "/admin",
+
+						whitelist: ["userTaskManagement.*"],
+						use: [],
+						mergeParams: true,
+
+						authentication: false,
+
+						authorization: true,
+
+						roles: ["admin"],
+
+						autoAliases: true,
+
+						aliases: {},
+
+						callingOptions: {},
+
+						bodyParsers: {
+							json: true,
+						},
+
+						mappingPolicy: "all", // Available values: "all", "restrict"
+
+						logging: true,
+					},
+
+					{
+						path: "/user",
+
 						whitelist: ["**"],
 						// Route-level Express middlewares. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 						use: [],
@@ -57,7 +87,7 @@ export default class ApiService extends Service {
 					},
 
 					{
-						path: "/api/auth",
+						path: "/auth",
 
 						whitelist: ["user.signin", "user.signup"],
 
@@ -98,13 +128,18 @@ export default class ApiService extends Service {
 			methods: {
 				async authorize(ctx, route, req, res) {
 					let auth = req.headers["authorization"];
+
 					if (auth && auth.startsWith("Bearer")) {
-						let token = auth.slice(7);
+						const token = auth.slice(7);
+
 						const payload = await ctx.call("user.verifyToken", {
 							token,
 						});
-						console.log(payload);
+
+						this.logger.infor("Token: ", payload);
+
 						ctx.meta.user = payload;
+
 						return Promise.resolve(ctx);
 					} else {
 						return Promise.reject("No token");
