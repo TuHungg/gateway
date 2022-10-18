@@ -1,14 +1,12 @@
 import { Service, ServiceBroker } from "moleculer";
 import * as ApiGateway from "moleculer-web";
 
-import { appNest } from "../src/main";
-
 export default class ApiService extends Service {
 	public constructor(broker: ServiceBroker) {
 		super(broker);
 		// @ts-ignore
 		this.parseServiceSchema({
-			name: "api",
+			name: "gateway",
 			mixins: [ApiGateway],
 
 			settings: {
@@ -17,9 +15,9 @@ export default class ApiService extends Service {
 
 				routes: [
 					{
-						path: "/admin",
+						path: "/user-task-management",
 
-						whitelist: ["userTaskManagement.*"],
+						whitelist: ["user-task-management.*"],
 						use: [],
 						mergeParams: true,
 
@@ -27,11 +25,18 @@ export default class ApiService extends Service {
 
 						authorization: true,
 
-						roles: ["admin"],
-
 						autoAliases: true,
 
-						aliases: {},
+						aliases: {
+							"POST /set-taskmanagement":
+								"user-task-management.create",
+							"PUT /update-taskmanagement":
+								"user-task-management.updateTaskList",
+							"GET /tasklistbyUserId":
+								"user-task-management.getTaskList",
+							"GET /getAllTaskmanagement":
+								"user-task-management.getAllTask",
+						},
 
 						callingOptions: {},
 
@@ -46,26 +51,25 @@ export default class ApiService extends Service {
 
 					{
 						path: "/user",
+						whitelist: ["user.*"],
 
-						whitelist: ["**"],
-						// Route-level Express middlewares. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 						use: [],
-						// Enable/disable parameter merging method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Disable-merging
+
 						mergeParams: true,
 
-						// Enable authentication. Implement the logic into `authenticate` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authentication
 						authentication: false,
 
-						// Enable authorization. Implement the logic into `authorize` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
-						authorization: true,
+						authorization: false,
 
-						// The auto-alias feature allows you to declare your route alias directly in your services.
-						// The gateway will dynamically build the full routes from service schema.
 						autoAliases: true,
 
-						aliases: {},
+						aliases: {
+							"POST /signin": "user.signin",
+							"POST /signup": "user.signup",
+							"GET /": "user.getAllUser",
+							"PUT /update-profile": "user.updateProfile",
+						},
 
-						// Calling options. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Calling-options
 						callingOptions: {},
 
 						bodyParsers: {
@@ -79,21 +83,22 @@ export default class ApiService extends Service {
 							},
 						},
 
-						// Mapping policy setting. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Mapping-policy
 						mappingPolicy: "all", // Available values: "all", "restrict"
 
-						// Enable/disable logging
 						logging: true,
 					},
 
 					{
-						path: "/auth",
+						path: "/task",
 
-						whitelist: ["user.signin", "user.signup"],
+						whitelist: ["task.*"],
 
 						mergeParams: true,
+
 						authentication: false,
-						authorization: false,
+
+						authorization: true,
+
 						autoAliases: true,
 
 						bodyParsers: {
@@ -105,6 +110,12 @@ export default class ApiService extends Service {
 								extended: true,
 								limit: "1MB",
 							},
+						},
+
+						aliases: {
+							"POST /created-task": "task.create",
+							"PUT /update-task": "task.update",
+							"GET /findAll": "task.getAll",
 						},
 
 						mappingPolicy: "all",
@@ -136,21 +147,14 @@ export default class ApiService extends Service {
 							token,
 						});
 
-						this.logger.infor("Token: ", payload);
-
 						ctx.meta.user = payload;
 
 						return Promise.resolve(ctx);
 					} else {
-						return Promise.reject("No token");
+						return Promise.reject("No token!");
 					}
 				},
 			},
-			created: this.startAppNest,
 		});
-	}
-
-	private async startAppNest() {
-		await appNest();
 	}
 }
