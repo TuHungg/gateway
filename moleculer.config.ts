@@ -188,4 +188,4 @@ const brokerConfig: BrokerOptions = {
 	},
 };
 
-export = brokerConfig;
+export = brokerConfig;	

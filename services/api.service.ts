@@ -28,14 +28,19 @@ export default class ApiService extends Service {
 						autoAliases: true,
 
 						aliases: {
-							"POST /set-taskmanagement":
+							"POST /createTaskItem":
 								"user-task-management.create",
-							"PUT /update-taskmanagement":
-								"user-task-management.updateTaskList",
+
+							"POST /set-task": "user-task-management.setTask",
+
+							"PUT /updateStatus":
+								"user-task-management.updateStatus",
+
 							"GET /tasklistbyUserId":
+								"user-task-management.getTasksListbyUserId",
+
+							"GET /getTaskList":
 								"user-task-management.getTaskList",
-							"GET /getAllTaskmanagement":
-								"user-task-management.getAllTask",
 						},
 
 						callingOptions: {},
@@ -87,40 +92,6 @@ export default class ApiService extends Service {
 
 						logging: true,
 					},
-
-					{
-						path: "/task",
-
-						whitelist: ["task.*"],
-
-						mergeParams: true,
-
-						authentication: false,
-
-						authorization: true,
-
-						autoAliases: true,
-
-						bodyParsers: {
-							json: {
-								strict: false,
-								limit: "1MB",
-							},
-							urlencoded: {
-								extended: true,
-								limit: "1MB",
-							},
-						},
-
-						aliases: {
-							"POST /created-task": "task.create",
-							"PUT /update-task": "task.update",
-							"GET /findAll": "task.getAll",
-						},
-
-						mappingPolicy: "all",
-						logging: true,
-					},
 				],
 				// Do not log client side errors (does not log an error response when the error.code is 400<=X<500)
 				log4XXResponses: false,
@@ -137,7 +108,7 @@ export default class ApiService extends Service {
 			},
 
 			methods: {
-				async authorize(ctx, route, req, res) {
+				authorize: async (ctx, route, req, res) => {
 					let auth = req.headers["authorization"];
 
 					if (auth && auth.startsWith("Bearer")) {
